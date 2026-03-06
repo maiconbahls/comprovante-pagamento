@@ -82,7 +82,7 @@ if (captureBtn) {
             document.getElementById('resultsArea').style.display = 'block';
 
             addTableRow({
-                file: `Captura Câmera ${new Date().toLocaleTimeString()}`,
+                file: `Captura Câmera ${new Date().toLocaleTimeString().replace(/:/g, '-')}.jpg`,
                 date: extracted.date,
                 value: extracted.value,
                 thumb: thumbUrl

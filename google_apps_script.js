@@ -21,11 +21,14 @@ function doPost(e) {
 
                 // Extração do Base64
                 var parts = data.base64.split(",");
-                var contentType = parts[0].split(":")[1].split(";")[0];
+                var contentType = parts[0].split(":")[1].split(";")[0] || "image/jpeg";
                 var bytes = Utilities.base64Decode(parts[1]);
 
+                // Limpeza extra do nome do arquivo
+                var fileName = (data.file || "Comprovante").replace(/[\\\/:*?"<>|]/g, '-');
+
                 // Criando o arquivo
-                var blob = Utilities.newBlob(bytes, contentType, data.file);
+                var blob = Utilities.newBlob(bytes, contentType, fileName);
                 var file = folder.createFile(blob);
 
                 // Deixa o arquivo público para visualização
