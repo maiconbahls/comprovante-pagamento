@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="glass-panel" style="max-width: 900px; width: 95%;">
+    <h1>Extração Inteligente de Comprovantes</h1>
+    <p class="subtitle">Auditoria de elite v8 ativa. Suporte total a PDF e Scanner de Celular (📱).</p>
+
+    <div id="statusOCR" style="text-align: center; margin-bottom: 20px; font-size: 13px; color: #818cf8;">
+        <span class="pulse-icon">●</span> Carregando motor de visão turbo...
+    </div>
+
+    <!-- SELETOR DE MÉTODOS (NEON) -->
+    <div
+        style="display: flex; gap: 15px; margin-bottom: 30px; justify-content: center; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05);">
+        <button type="button" id="btnShowUpload" class="btn"
+            style="flex: 1; background: #6366f1; font-size: 14px; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);">
+            📁 SUBIR ARQUIVOS (PDF)
+        </button>
+        <button type="button" id="btnShowCamera" class="btn"
+            style="flex: 1; background: #10b981; font-size: 14px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">
+            📸 DIGITALIZAR (CÂMERA)
+        </button>
+    </div>
+
+    <form id="uploadForm" enctype="multipart/form-data">
+        <style>
+            .pulse-icon {
+                color: #4ade80;
+                margin-right: 5px;
+                animation: pulse 2s infinite;
+            }
+
+            @keyframes pulse {
+                0% {
+                    opacity: 1;
+                }
+
+                50% {
+                    opacity: 0.3;
+                }
+
+                100% {
+                    opacity: 1;
+                }
+            }
+
+            #progressContainer {
+                width: 100%;
+                height: 8px;
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 4px;
+                margin-bottom: 20px;
+                display: none;
+                overflow: hidden;
+            }
+
+            #progressBar {
+                height: 100%;
+                background: linear-gradient(to right, #4f46e5, #c084fc);
+                width: 0%;
+                transition: width 0.3s;
+            }
+
+            .badge-ocr {
+                background: rgba(99, 102, 241, 0.2);
+                color: #a5b4fc;
+                padding: 4px 10px;
+                border-radius: 6px;
+                font-size: 11px;
+                font-weight: 600;
+                border: 1px solid rgba(99, 102, 241, 0.3);
+                white-space: nowrap;
+                display: inline-block;
+            }
+
+            /* Scanner Overlay */
+            .scanner-overlay {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 2px;
+                background: rgba(79, 70, 229, 0.8);
+                box-shadow: 0 0 15px #6366f1;
+                animation: scan 3s infinite linear;
+                z-index: 10;
+            }
+
+            @keyframes scan {
+                0% {
+                    top: 0%;
+                }
+
+                50% {
+                    top: 100%;
+                }
+
+                100% {
+                    top: 0%;
+                }
+            }
+        </style>
+
+        <div id="uploadSection">
+            <div class="upload-area" id="dropZone">
+                <div class="upload-icon">📄</div>
+                <div style="font-weight: 600; color: #e2e8f0; margin-bottom: 5px;">Clique ou arraste arquivos aqui</div>
+                <div style="font-size: 13px; color: #94a3b8;">Suporta PDFs Digitais e Escaneados</div>
+            </div>
+
+            <input type="file" id="fileInput" name="files" accept="application/pdf" multiple style="display: none;">
+            <p id="fileCount" style="text-align: center; color: #818cf8; font-weight: 600; margin-bottom: 10px;"></p>
+
+            <div id="progressContainer">
+                <div id="progressBar"></div>
+            </div>
+
+            <button type="submit" class="btn" id="submitBtn">
+                <span id="btnText">Processar Comprovantes</span>
+                <div class="loader" id="btnLoader"></div>
+            </button>
+        </div>
+    </form>
+
+    <!-- Modal de Câmera (Scanner) -->
+    <div id="cameraModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>📸 Scanner Inteligente</h3>
+                <span class="close-modal" id="closeCameraBtn">&times;</span>
+            </div>
+            <div class="modal-body"
+                style="position: relative; overflow: hidden; border-radius: 12px; background: #000; min-height: 400px; display: flex; align-items: center; justify-content: center;">
+                <video id="video" width="100%" height="auto" autoplay playsinline
+                    style="display: block; border-radius: 12px;"></video>
+                <div class="scanner-overlay"></div>
+                <!-- Guia de Enquadramento -->
+                <div
+                    style="position: absolute; top: 15%; left: 10%; right: 10%; bottom: 15%; border: 2px dashed rgba(255,255,255,0.4); pointer-events: none; border-radius: 10px; z-index: 5;">
+                </div>
+            </div>
+            <div class="modal-footer" style="display: flex; flex-direction: column; gap: 15px; align-items: center;">
+                <button id="captureBtn" class="btn"
+                    style="padding: 15px 40px; font-size: 18px; background: linear-gradient(135deg, #4ade80, #22c55e); width: 100%;">
+                    ⚡ CAPTURAR E LER AGORA
+                </button>
+                <p id="cameraStatus" style="font-size: 12px; color: #94a3b8;">Centralize o comprovante na área
+                    pontilhada</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="resultsArea" style="display: none; margin-top: 30px;">
+        <div
+            style="display: flex; gap: 10px; justify-content: flex-end; align-items: center; margin-bottom: 15px; flex-wrap: wrap;">
+            <button id="downloadExcel" class="btn btn-success"
+                style="width: auto; padding: 10px 20px; font-size: 14px;">
+                📊 Baixar Excel (.xlsx)
+            </button>
+            <button id="syncGoogle" class="btn"
+                style="width: auto; padding: 10px 20px; font-size: 14px; background: #4285F4; color: white;">
+                🚀 Sincronizar Google Drive/Sheets
+            </button>
+            <button id="downloadPDF" class="btn"
+                style="width: auto; padding: 10px 20px; font-size: 14px; background: #ef4444; color: white;">
+                📄 Baixar Comprovantes (PDF)
+            </button>
+        </div>
+        
+        <div id="googleConfig" style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); display: none;">
+            <p style="font-size: 12px; color: #94a3b8; margin-bottom: 10px;">Configure sua URL do App Script para salvar automaticamente:</p>
+            <input type="text" id="appsScriptUrl" placeholder="https://script.google.com/macros/s/.../exec" 
+                style="width: 100%; padding: 10px; background: #000; border: 1px solid #4f46e5; border-radius: 8px; color: white; font-size: 13px;">
+        </div>
+
+        <div class="table-container">
+            <table id="resultsTable">
+                <thead>
+                    <tr>
+                        <th>Arquivo</th>
+                        <th>Data do Pagamento</th>
+                        <th>Valor (R$)</th>
+                        <th>Método</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <a href="/logout" class="logout-link">Sair do Sistema</a>
+</div>
+
+<!-- Modal de Visualização do Comprovante -->
+<div id="previewModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">Visualização</h3>
+            <span class="close-modal">&times;</span>
+        </div>
+        <div class="modal-body">
+            <img id="modalImage" src="" alt="Comprovante ampliado">
+        </div>
+        <div class="modal-footer">
+            <p>Clique fora para fechar</p>
+        </div>
+    </div>
+</div>
+
+<!-- Div escondida para renderizar PDF para imagem -->
+<div id="pdfCanvasContainer" style="display: none;"></div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Bibliotecas Necessárias -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+{% endblock %}
