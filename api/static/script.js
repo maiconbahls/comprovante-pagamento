@@ -491,12 +491,12 @@ syncBtn.onclick = async () => {
         try {
             const response = await fetch(url, {
                 method: 'POST',
-                mode: 'no-cors', // Apps Script web apps often work best with no-cors or specialized CORS headers
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ file, date, value, base64 })
+                // Truque técnico: usamos text/plain para ignorar restrições de CORS do navegador,
+                // já que o Apps Script consegue ler o conteúdo de qualquer forma.
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({ file, date, value, base64: base64 || "" })
             });
 
-            // Com no-cors não conseguimos ler a resposta, mas assumimos sucesso se não houver erro de rede
             successCount++;
             tr.style.opacity = '0.5';
             tr.style.background = 'rgba(74, 222, 128, 0.1)';

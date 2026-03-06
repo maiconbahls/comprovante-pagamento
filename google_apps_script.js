@@ -1,38 +1,44 @@
 function doPost(e) {
     try {
         var data = JSON.parse(e.postData.contents);
-        var sheetName = "Página1"; // Nome da página na sua planilha
+        var sheetName = "Página1";
 
-        // ATENÇÃO: Se quiser salvar as fotos no Drive, coloque o ID da pasta abaixo.
-        // Se deixar como está, ele salvará apenas os dados na planilha.
-        var folderId = "ID_DA_PASTA_DO_GOOGLE_DRIVE";
+        // ID da sua pasta do Google Drive
+        var folderId = "1uKJmiN97zEsLWMuas2zGK605qcJDsqM2";
 
         var ss = SpreadsheetApp.getActiveSpreadsheet();
         var sheet = ss.getSheetByName(sheetName) || ss.insertSheet(sheetName);
 
-        // Cria cabeçalhos se a planilha estiver vazia
         if (sheet.getLastRow() === 0) {
             sheet.appendRow(["Data de Registro", "Arquivo", "Data do Comprovante", "Valor", "Link no Drive"]);
-            sheet.getRange(1, 1, 1, 5).setFontWeight("bold").setBackground("#f3f4f6");
         }
 
         var fileUrl = "Sem arquivo";
-        if (data.base64 && folderId !== "ID_DA_PASTA_DO_GOOGLE_DRIVE") {
+
+        if (data.base64 && data.base64.includes(",")) {
             try {
-                var folder = DriveApp.getFolderById(folderId);
-                var bytes = Utilities.base64Decode(data.base64.split(",")[1]);
-                var blob = Utilities.newBlob(bytes, "image/jpeg", data.file);
+                var folder = DriveApp.getFolderById(folderId.trim());
+
+                // Extração do Base64
+                var parts = data.base64.split(",");
+                var contentType = parts[0].split(":")[1].split(";")[0];
+                var bytes = Utilities.base64Decode(parts[1]);
+
+                // Criando o arquivo
+                var blob = Utilities.newBlob(bytes, contentType, data.file);
                 var file = folder.createFile(blob);
+
+                // Deixa o arquivo público para visualização
+                file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
                 fileUrl = file.getUrl();
             } catch (err) {
                 fileUrl = "Erro Drive: " + err.toString();
             }
         }
 
-        // Adiciona a linha com os dados
         sheet.appendRow([new Date(), data.file, data.date, data.value, fileUrl]);
 
-        return ContentService.createTextOutput(JSON.stringify({ "status": "success" }))
+        return ContentService.createTextOutput(JSON.stringify({ "status": "success", "url": fileUrl }))
             .setMimeType(ContentService.MimeType.JSON);
 
     } catch (err) {
