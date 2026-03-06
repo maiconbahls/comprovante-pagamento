@@ -82,7 +82,7 @@ if (captureBtn) {
             document.getElementById('resultsArea').style.display = 'block';
 
             addTableRow({
-                file: `Captura Câmera ${new Date().toLocaleTimeString().replace(/:/g, '-')}.jpg`,
+                file: `Captura-${new Date().getTime()}.jpg`,
                 date: extracted.date,
                 value: extracted.value,
                 thumb: thumbUrl
@@ -445,14 +445,29 @@ const appsScriptUrlInput = document.getElementById('appsScriptUrl');
 // URL Padrão do Maicon
 const DEFAULT_URL = "https://script.google.com/macros/s/AKfycby37qxyzIOL1G2dC9ji9VQa1wkE3L4N6142XdLk-92FeiDNaeO-DY6d9m97sbBSMpfy/exec";
 
-// Carregar URL salva ou usar a padrão
+// --- LIMPEZA DE CACHE DE URLS ANTIGAS ---
 const savedUrl = localStorage.getItem('appsScriptUrl');
-appsScriptUrlInput.value = savedUrl ? savedUrl : DEFAULT_URL;
+// Se o link for um dos antigos que sabemos que estavam com problemas de CORS ou MimeType
+const oldUrlsPrefixes = [
+    "AKfycbzPdOvq", "AKfycbwTP6jK", "AKfycbzQuCk",
+    "AKfycby_CXs", "AKfycbyT49Dp"
+];
 
-// Se for a primeira vez, salva a padrão no localStorage também
-if (!savedUrl) {
+let finalUrl = DEFAULT_URL;
+if (savedUrl) {
+    const isOld = oldUrlsPrefixes.some(prefix => savedUrl.includes(prefix));
+    if (isOld) {
+        console.log("🧹 Limpando URL antiga/quebrada do cache.");
+        localStorage.setItem('appsScriptUrl', DEFAULT_URL);
+        finalUrl = DEFAULT_URL;
+    } else {
+        finalUrl = savedUrl;
+    }
+} else {
     localStorage.setItem('appsScriptUrl', DEFAULT_URL);
 }
+
+appsScriptUrlInput.value = finalUrl;
 
 appsScriptUrlInput.onchange = () => {
     localStorage.setItem('appsScriptUrl', appsScriptUrlInput.value);
