@@ -356,16 +356,35 @@ function addTableRow(data, method, tableBody) {
         <td><div class="editable-cell" contenteditable="true">${data.date}</div></td>
         <td style="color: #4ade80; font-weight: 700;">R$ <div class="editable-cell" contenteditable="true" style="color: #4ade80;">${data.value}</div></td>
         <td><span class="badge-ocr">${method}</span></td>
+        <td>
+            <button class="btn btn-delete" style="padding: 5px 10px; background: #ef4444; font-size: 12px; width: auto; border-radius: 8px;">
+                🗑️ Excluir
+            </button>
+        </td>
     `;
 
+    // Click na linha para ver o comprovante (exceto no botão de excluir e células editáveis)
     tr.onclick = (e) => {
-        if (e.target.classList.contains('editable-cell')) return;
+        if (e.target.classList.contains('editable-cell') || e.target.closest('.btn-delete')) return;
         if (data.thumb) {
             document.getElementById('modalImage').src = data.thumb;
             document.getElementById('modalTitle').innerText = `Comprovante: ${data.file}`;
             document.getElementById('previewModal').style.display = 'block';
         }
     };
+
+    // Lógica do botão excluir
+    tr.querySelector('.btn-delete').onclick = (e) => {
+        e.stopPropagation();
+        if (confirm("Deseja realmente excluir esta digitalização?")) {
+            tr.remove();
+            // Se a tabela ficar vazia, oculta a área de resultados
+            if (tableBody.children.length === 0) {
+                document.getElementById('resultsArea').style.display = 'none';
+            }
+        }
+    };
+
     tableBody.appendChild(tr);
 }
 
