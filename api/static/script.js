@@ -443,7 +443,7 @@ const googleConfig = document.getElementById('googleConfig');
 const appsScriptUrlInput = document.getElementById('appsScriptUrl');
 
 // URL Padrão do Maicon
-const DEFAULT_URL = "https://script.google.com/macros/s/AKfycbyT49Dp06zUlPHoYOOm4ZNEBvQk8dfvHHtPYobpdlDPuzi8XQnrCIxF140iOmV7JEY5/exec";
+const DEFAULT_URL = "https://script.google.com/macros/s/AKfycby37qxyzIOL1G2dC9ji9VQa1wkE3L4N6142XdLk-92FeiDNaeO-DY6d9m97sbBSMpfy/exec";
 
 // Carregar URL salva ou usar a padrão
 const savedUrl = localStorage.getItem('appsScriptUrl');
