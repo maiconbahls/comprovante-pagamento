@@ -357,8 +357,8 @@ function addTableRow(data, method, tableBody) {
         <td style="color: #4ade80; font-weight: 700;">R$ <div class="editable-cell" contenteditable="true" style="color: #4ade80;">${data.value}</div></td>
         <td><span class="badge-ocr">${method}</span></td>
         <td>
-            <button class="btn btn-delete" style="padding: 5px 10px; background: #ef4444; font-size: 12px; width: auto; border-radius: 8px;">
-                🗑️ Excluir
+            <button class="btn btn-delete" style="padding: 8px; background: #ef4444; font-size: 16px; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;" title="Excluir digitalização">
+                🗑️
             </button>
         </td>
     `;
