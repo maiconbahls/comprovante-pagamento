@@ -423,9 +423,16 @@ const syncBtn = document.getElementById('syncGoogle');
 const googleConfig = document.getElementById('googleConfig');
 const appsScriptUrlInput = document.getElementById('appsScriptUrl');
 
-// Carregar URL salva
-if (localStorage.getItem('appsScriptUrl')) {
-    appsScriptUrlInput.value = localStorage.getItem('appsScriptUrl');
+// URL Padrão do Maicon
+const DEFAULT_URL = "https://script.google.com/macros/s/AKfycbxh6g8_DgBoNvfjv5p0c3e2l2H93siBYfS40efGgAMVH1fHvjoTTPyds33ZBI4NIFQU/exec";
+
+// Carregar URL salva ou usar a padrão
+const savedUrl = localStorage.getItem('appsScriptUrl');
+appsScriptUrlInput.value = savedUrl ? savedUrl : DEFAULT_URL;
+
+// Se for a primeira vez, salva a padrão no localStorage também
+if (!savedUrl) {
+    localStorage.setItem('appsScriptUrl', DEFAULT_URL);
 }
 
 appsScriptUrlInput.onchange = () => {
