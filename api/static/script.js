@@ -104,6 +104,37 @@ if (dropZone && fileInput) {
     dropZone.onclick = () => fileInput.click();
     fileInput.addEventListener('change', updateFileCount);
 
+    // Suporte a Arrastar e Soltar (Drag & Drop)
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+        }, false);
+    });
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => {
+            dropZone.style.background = "rgba(99, 102, 241, 0.1)";
+            dropZone.style.borderColor = "#4f46e5";
+        }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => {
+            dropZone.style.background = "";
+            dropZone.style.borderColor = "";
+        }, false);
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        if (files.length > 0) {
+            fileInput.files = files;
+            updateFileCount();
+        }
+    }, false);
+
     function updateFileCount() {
         const countDisplay = document.getElementById('fileCount');
         countDisplay.innerText = fileInput.files.length > 0 ?
