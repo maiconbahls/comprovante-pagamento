@@ -492,36 +492,78 @@ syncBtn.onclick = async () => {
     }
 
     syncBtn.disabled = true;
-    syncBtn.innerText = "⏳ Sincronizando...";
+    syncBtn.innerText = "⏳ Gerando PDF Único e Sincronizando...";
 
-    let successCount = 0;
-    let failCount = 0;
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        let attachments = [];
+        let itemsData = [];
+        let hasImages = false;
 
-    for (const tr of rows) {
-        const file = tr.querySelectorAll('td')[0].innerText.replace('📄 ', '');
-        const date = tr.querySelector('td:nth-child(2) .editable-cell').innerText;
-        const value = tr.querySelector('td:nth-child(3) .editable-cell').innerText.replace('R$ ', '');
-        const base64 = tr.dataset.thumb;
+        // 1. Coleta dados e gera PDF unificado
+        rows.forEach((tr, index) => {
+            const fileName = tr.querySelectorAll('td')[0].innerText.replace('📄 ', '');
+            const date = tr.querySelector('td:nth-child(2) .editable-cell').innerText;
+            const value = tr.querySelector('td:nth-child(3) .editable-cell').innerText.replace('R$ ', '');
+            const thumb = tr.dataset.thumb;
 
-        try {
-            const response = await fetch(url, {
-                method: 'POST',
-                // Truque técnico: usamos text/plain para ignorar restrições de CORS do navegador,
-                // já que o Apps Script consegue ler o conteúdo de qualquer forma.
-                headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({ file, date, value, base64: base64 || "" })
+            itemsData.push({ file: fileName, date, value });
+
+            if (thumb) {
+                if (hasImages) doc.addPage();
+                doc.setFontSize(10);
+                doc.text(`${fileName} - Data: ${date} - Valor: R$ ${value}`, 15, 10);
+
+                const imgProps = doc.getImageProperties(thumb);
+                const pdfWidth = doc.internal.pageSize.getWidth() - 20;
+                const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+                doc.addImage(thumb, 'JPEG', 10, 15, pdfWidth, Math.min(pdfHeight, 260));
+                hasImages = true;
+            }
+        });
+
+        // 2. Converte PDF para Base64
+        let pdfBase64 = "";
+        if (hasImages) {
+            const pdfBlob = doc.output('blob');
+            const reader = new FileReader();
+            pdfBase64 = await new Promise(resolve => {
+                reader.onloadend = () => resolve(reader.result);
+                reader.readAsDataURL(pdfBlob);
             });
-
-            successCount++;
-            tr.style.opacity = '0.5';
-            tr.style.background = 'rgba(74, 222, 128, 0.1)';
-        } catch (err) {
-            console.error("Erro ao sincronizar linha:", err);
-            failCount++;
         }
-    }
 
-    syncBtn.disabled = false;
-    syncBtn.innerText = "🚀 Sincronizar Google Drive/Sheets";
-    alert(`Sincronização concluída!\nSucessos: ${successCount}\nFalhas: ${failCount}\n\nNota: Se você usou uma URL nova, verifique se deu permissão no Google Scripts.`);
+        // 3. Envia TUDO em uma única tacada para o Apps Script
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({
+                isBatch: true,
+                pdfName: `Lote-${new Date().getTime()}.pdf`,
+                pdfBase64: pdfBase64,
+                items: itemsData
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.status === "success") {
+            rows.forEach(tr => {
+                tr.style.opacity = '0.5';
+                tr.style.background = 'rgba(74, 222, 128, 0.1)';
+            });
+            alert(`Sucesso! ${itemsData.length} itens salvos na Planilha.\nO PDF único com todas as fotos foi salvo no Drive.`);
+        } else {
+            throw new Error(result.message);
+        }
+
+    } catch (err) {
+        console.error("Erro na sincronização:", err);
+        alert("Erro ao sincronizar: " + err.message);
+    } finally {
+        syncBtn.disabled = false;
+        syncBtn.innerText = "🚀 Sincronizar Google Drive/Sheets";
+    }
 };
